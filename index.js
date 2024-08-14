@@ -80,6 +80,7 @@ app.get('/api/product_options/:productId', async (req, res) => {
             throw new Error('Failed to fetch product options');
         }
 
+        console.log(response.json());
         const data = await response.json();
         res.json(data);
     } catch (error) {
@@ -89,7 +90,6 @@ app.get('/api/product_options/:productId', async (req, res) => {
 });
 
 app.post('/api/hulk/cart', async (req, res) => {
-    const { cart } = req.body;
 
     try {
         const response = await fetch(`https://productoption.hulkapps.com/v1/cart`, {
@@ -98,11 +98,13 @@ app.post('/api/hulk/cart', async (req, res) => {
                 'Content-Type': 'application/json',
                 'Authorization': hulkKey
             },
-            body: JSON.stringify(cart)
+            body: JSON.stringify(req.body)
         });
 
         if (!response.ok) {
-            throw new Error('Failed to send cart');
+            const errorResponse = await response.json();
+            const errorMessage = errorResponse.error || 'An error occurred while processing the request';
+            throw new Error(JSON.stringify(errorResponse));
         }
 
         const data = await response.json();
