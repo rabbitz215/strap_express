@@ -90,6 +90,7 @@ app.get('/api/product_options/:productId', async (req, res) => {
 });
 
 app.post('/api/hulk/cart', async (req, res) => {
+    const { cart } = req.body;
 
     try {
         const response = await fetch(`https://productoption.hulkapps.com/v1/cart`, {
@@ -98,7 +99,7 @@ app.post('/api/hulk/cart', async (req, res) => {
                 'Content-Type': 'application/json',
                 'Authorization': hulkKey
             },
-            body: JSON.stringify(req.body)
+            body: JSON.stringify(cart)
         });
 
         if (!response.ok) {
