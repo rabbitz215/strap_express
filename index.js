@@ -60,10 +60,10 @@ app.get('/api/products/:collectionId', async (req, res) => {
         const productsData = await productsResponse.json();
         const products = productsData.products;
 
-        // 2. Fetch the price for each product
-        const productsWithPrices = await Promise.all(
+        // 2. Fetch the details for each product
+        const productsWithDetails = await Promise.all(
             products.map(async (product) => {
-                const priceResponse = await fetch(`https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products/${product.id}.json`, {
+                const productResponse = await fetch(`https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products/${product.id}.json`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -71,16 +71,22 @@ app.get('/api/products/:collectionId', async (req, res) => {
                     },
                 });
 
-                if (!priceResponse.ok) {
-                    throw new Error(`Failed to fetch price for product ${product.id}`);
+                if (!productResponse.ok) {
+                    throw new Error(`Failed to fetch details for product ${product.id}`);
                 }
 
-                const priceData = await priceResponse.json();
-                return { ...product, price: priceData.product.variants[0].price };
+                const productData = await productResponse.json();
+                return {
+                    ...product,
+                    price: productData.product.variants.length > 0
+                        ? productData.product.variants[0].price
+                        : productData.product.price,
+                    variants: productData.product.variants
+                };
             })
         );
 
-        res.json(productsWithPrices);
+        res.json(productsWithDetails);
     } catch (error) {
         console.error('Error fetching products:', error);
         res.status(500).json({ error: 'Internal Server Error' });
