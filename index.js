@@ -44,7 +44,8 @@ app.get('/api/products/:collectionId', async (req, res) => {
     const { collectionId } = req.params;
 
     try {
-        const response = await fetch(`https://${shopifyShopName}.myshopify.com/admin/api/2024-07/collectionds/${collectionId}.json?include=products`, {
+        // 1. Fetch the collection's products
+        const productsResponse = await fetch(`https://${shopifyShopName}.myshopify.com/admin/api/2024-07/collections/${collectionId}/products.json`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -52,16 +53,32 @@ app.get('/api/products/:collectionId', async (req, res) => {
             },
         });
 
-        if (!response.ok) {
+        if (!productsResponse.ok) {
             throw new Error('Failed to fetch products');
         }
 
-        const data = await response.json();
-        const collection = data.collection;
-        const productsWithPrices = collection.products.map((product) => ({
-            ...product,
-            price: product.variants[0].price,
-        }));
+        const productsData = await productsResponse.json();
+        const products = productsData.products;
+
+        // 2. Fetch the price for each product
+        const productsWithPrices = await Promise.all(
+            products.map(async (product) => {
+                const priceResponse = await fetch(`https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products/${product.id}.json`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Shopify-Access-Token': shopifyAccessToken,
+                    },
+                });
+
+                if (!priceResponse.ok) {
+                    throw new Error(`Failed to fetch price for product ${product.id}`);
+                }
+
+                const priceData = await priceResponse.json();
+                return { ...product, price: priceData.product.variants[0].price };
+            })
+        );
 
         res.json(productsWithPrices);
     } catch (error) {
