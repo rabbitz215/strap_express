@@ -44,7 +44,7 @@ app.get('/api/products/:collectionId', async (req, res) => {
     const { collectionId } = req.params;
 
     try {
-        const response = await fetch(`https://${shopifyShopName}.myshopify.com/admin/api/2024-07/collections/${collectionId}/products.json`, {
+        const response = await fetch(`https://${shopifyShopName}.myshopify.com/admin/api/2024-07/collectionds/${collectionId}.json?include=products`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -57,7 +57,13 @@ app.get('/api/products/:collectionId', async (req, res) => {
         }
 
         const data = await response.json();
-        res.json(data);
+        const collection = data.collection;
+        const productsWithPrices = collection.products.map((product) => ({
+            ...product,
+            price: product.variants[0].price,
+        }));
+
+        res.json(productsWithPrices);
     } catch (error) {
         console.error('Error fetching products:', error);
         res.status(500).json({ error: 'Internal Server Error' });
