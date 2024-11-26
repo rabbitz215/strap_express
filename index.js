@@ -94,7 +94,7 @@ app.get('/api/collections', async (req, res) => {
 
 // Endpoint for fetching all products
 app.get('/api/products', async (req, res) => {
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = parseInt(req.query.limit) || 1;
 
     try {
         const productsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products.json?limit=${limit}`;
