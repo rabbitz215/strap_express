@@ -40,6 +40,56 @@ const apiKeyMiddleware = (req, res, next) => {
 
 app.use(apiKeyMiddleware);
 
+const fetchCollectionsWithProductCount = async () => {
+    const collectionsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/custom_collections.json`;
+    const productsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products.json?collection_id=`;
+
+    const collectionsResponse = await axios.get(collectionsUrl, {
+        headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
+    });
+
+    const collections = collectionsResponse.data.custom_collections;
+
+    const collectionsWithCounts = await Promise.all(
+        collections.map(async (collection) => {
+            const productsResponse = await axios.get(`${productsUrl}${collection.id}`, {
+                headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
+            });
+
+            return {
+                ...collection,
+                product_count: productsResponse.data.products.length,
+            };
+        })
+    );
+
+    return collectionsWithCounts;
+};
+
+app.get('/api/collections', async (req, res) => {
+    try {
+        const collections = await fetchCollectionsWithProductCount();
+        res.json(collections);
+    } catch (error) {
+        console.error('Error fetching collections:', error);
+        res.status(500).json({ error: 'Failed to fetch collections' });
+    }
+});
+
+app.get('/api/products', async (req, res) => {
+    try {
+        const productsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products.json`;
+        const response = await axios.get(productsUrl, {
+            headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
+        });
+
+        res.json(response.data.products);
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).json({ error: 'Failed to fetch products' });
+    }
+});
+
 app.get('/api/products/:collectionId', async (req, res) => {
     const { collectionId } = req.params;
 
