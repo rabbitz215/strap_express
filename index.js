@@ -44,21 +44,33 @@ const fetchCollectionsWithProductCount = async () => {
     const collectionsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/custom_collections.json`;
     const productsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products.json?collection_id=`;
 
-    const collectionsResponse = await axios.get(collectionsUrl, {
+    // Fetch collections
+    const collectionsResponse = await fetch(collectionsUrl, {
         headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
     });
 
-    const collections = collectionsResponse.data.custom_collections;
+    if (!collectionsResponse.ok) {
+        throw new Error('Failed to fetch collections');
+    }
 
+    const collectionsData = await collectionsResponse.json();
+    const collections = collectionsData.custom_collections;
+
+    // Fetch product counts for each collection
     const collectionsWithCounts = await Promise.all(
         collections.map(async (collection) => {
-            const productsResponse = await axios.get(`${productsUrl}${collection.id}`, {
+            const productsResponse = await fetch(`${productsUrl}${collection.id}`, {
                 headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
             });
 
+            if (!productsResponse.ok) {
+                throw new Error(`Failed to fetch products for collection ID ${collection.id}`);
+            }
+
+            const productsData = await productsResponse.json();
             return {
                 ...collection,
-                product_count: productsResponse.data.products.length,
+                product_count: productsData.products.length,
             };
         })
     );
@@ -66,6 +78,7 @@ const fetchCollectionsWithProductCount = async () => {
     return collectionsWithCounts;
 };
 
+// Endpoint for fetching collections
 app.get('/api/collections', async (req, res) => {
     try {
         const collections = await fetchCollectionsWithProductCount();
@@ -76,14 +89,21 @@ app.get('/api/collections', async (req, res) => {
     }
 });
 
+// Endpoint for fetching all products
 app.get('/api/products', async (req, res) => {
     try {
         const productsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products.json`;
-        const response = await axios.get(productsUrl, {
+
+        const response = await fetch(productsUrl, {
             headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
         });
 
-        res.json(response.data.products);
+        if (!response.ok) {
+            throw new Error('Failed to fetch products');
+        }
+
+        const productsData = await response.json();
+        res.json(productsData.products);
     } catch (error) {
         console.error('Error fetching products:', error);
         res.status(500).json({ error: 'Failed to fetch products' });
