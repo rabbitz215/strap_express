@@ -49,8 +49,10 @@ const fetchCollectionsWithProductCount = async () => {
         headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
     });
 
+    // Ensure the response is OK
     if (!collectionsResponse.ok) {
-        throw new Error('Failed to fetch collections');
+        const errorText = await collectionsResponse.text(); // Get detailed error
+        throw new Error(`Failed to fetch collections: ${errorText}`);
     }
 
     const collectionsData = await collectionsResponse.json();
@@ -64,7 +66,8 @@ const fetchCollectionsWithProductCount = async () => {
             });
 
             if (!productsResponse.ok) {
-                throw new Error(`Failed to fetch products for collection ID ${collection.id}`);
+                const errorText = await productsResponse.text(); // Get detailed error
+                throw new Error(`Failed to fetch products for collection ID ${collection.id}: ${errorText}`);
             }
 
             const productsData = await productsResponse.json();
@@ -85,7 +88,7 @@ app.get('/api/collections', async (req, res) => {
         res.json(collections);
     } catch (error) {
         console.error('Error fetching collections:', error);
-        res.status(500).json({ error: 'Failed to fetch collections' });
+        res.status(500).json({ error: 'Failed to fetch collections', details: error.message });
     }
 });
 
@@ -99,14 +102,15 @@ app.get('/api/products', async (req, res) => {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch products');
+            const errorText = await response.text(); // Get detailed error
+            throw new Error(`Failed to fetch products: ${errorText}`);
         }
 
         const productsData = await response.json();
         res.json(productsData.products);
     } catch (error) {
         console.error('Error fetching products:', error);
-        res.status(500).json({ error: 'Failed to fetch products' });
+        res.status(500).json({ error: 'Failed to fetch products', details: error.message });
     }
 });
 
