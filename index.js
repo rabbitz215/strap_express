@@ -97,7 +97,7 @@ app.get('/api/products', async (req, res) => {
     const limit = parseInt(req.query.limit) || 1;
 
     try {
-        const productsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products.json?limit=${limit}`;
+        const productsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products.json?limit=1`;
 
         const response = await fetch(productsUrl, {
             headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
