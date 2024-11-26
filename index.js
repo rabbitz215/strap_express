@@ -40,11 +40,11 @@ const apiKeyMiddleware = (req, res, next) => {
 
 app.use(apiKeyMiddleware);
 
-const fetchCollectionsWithProductCount = async () => {
-    const collectionsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/custom_collections.json`;
+const fetchCollectionsWithProductCount = async (limit = 10, productLimit = 5) => {
+    const collectionsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/custom_collections.json?limit=${limit}`;
     const productsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products.json?collection_id=`;
 
-    // Fetch collections
+    // Fetch collections with limit
     const collectionsResponse = await fetch(collectionsUrl, {
         headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
     });
@@ -58,10 +58,10 @@ const fetchCollectionsWithProductCount = async () => {
     const collectionsData = await collectionsResponse.json();
     const collections = collectionsData.custom_collections;
 
-    // Fetch product counts for each collection
+    // Fetch product counts for each collection with the product limit
     const collectionsWithCounts = await Promise.all(
         collections.map(async (collection) => {
-            const productsResponse = await fetch(`${productsUrl}${collection.id}`, {
+            const productsResponse = await fetch(`${productsUrl}${collection.id}&limit=${productLimit}`, {
                 headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
             });
 
@@ -94,8 +94,10 @@ app.get('/api/collections', async (req, res) => {
 
 // Endpoint for fetching all products
 app.get('/api/products', async (req, res) => {
+    const limit = parseInt(req.query.limit) || 5;
+
     try {
-        const productsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products.json`;
+        const productsUrl = `https://${shopifyShopName}.myshopify.com/admin/api/2024-07/products.json?limit=${limit}`;
 
         const response = await fetch(productsUrl, {
             headers: { 'X-Shopify-Access-Token': shopifyAccessToken },
